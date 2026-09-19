@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculateur d'Impôt sur le Revenu 2026 - Conforme Loi de Finances</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0f0fe',
+                            500: '#2563eb',
+                            600: '#1d4ed8',
+                            700: '#1e40af',
+                            800: '#1e3a8a',
+                            900: '#172554',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.4); border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.7); }
+        .custom-tooltip {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+        }
+        .has-tooltip:hover .custom-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-200">
+
+    <header class="sticky top-0 z-50 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-gradient-to-tr from-blue-700 to-indigo-600 text-white rounded-xl shadow-md shadow-blue-500/20 flex items-center justify-center">
+                    <i class="fa-solid fa-scale-balanced text-lg"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-extrabold text-lg tracking-tight text-slate-900 dark:text-white">FiscFrance 2026</h1>
+                        <span class="text-[10px] font-bold uppercase tracking-widest bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 px-2 py-0.5 rounded-md">Loi 2026</span>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Calcul Officiel IR (Revenus 2025)</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2.5">
+                <button id="themeToggleBtn" onclick="toggleDarkMode()" title="Changer de thème" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                    <i class="fa-solid fa-moon dark:hidden"></i>
+                    <i class="fa-solid fa-sun hidden dark:block text-amber-400"></i>
+                </button>
+                <button onclick="resetCalculator()" title="Réinitialiser" class="text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-arrow-rotate-left"></i>
+                    <span class="hidden sm:inline">Réinitialiser</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- SECTION GAUCHE: SAISIES (7 COLS) -->
+        <section class="lg:col-span-7 space-y-6">
+            
+            <!-- STEP 1: SITUATION DU FOYER -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200/80 dark:border-slate-700/80 transition-all">
+                <div class="flex items-center justify-between mb-5">
+                    <div class="flex items-center gap-3">
+                        <span class="flex items-center justify-center w-8 h-8 rounded-xl bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 font-bold text-sm">1</span>
+                        <div>
+                            <h2 class="text-base font-bold text-slate-900 dark:text-white">Situation Familiale & Quotient Familial</h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Détermine le nombre de parts de votre foyer fiscal</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span id="badgeNbParts" class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800">
+                            <i class="fa-solid fa-users text-xs"></i> <span id="valNbParts">1 part</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="statutMarital" class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-2">Statut Matrimonial</label>
+                        <select id="statutMarital" onchange="runCalculation()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                            <option value="celibataire">Célibataire / Divorcé(e)</option>
+                            <option value="marie_pacs">Marié(e) / Pacsé(e)</option>
+                            <option value="veuf">Veuf / Veuve</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-2">Enfants à charge exclusive</label>
+                        <div class="flex items-center">
+                            <button type="button" onclick="adjustCount('enfantsCharge', -1)" class="w-10 h-10 rounded-l-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold transition">-</button>
+                            <input type="number" id="enfantsCharge" value="0" min="0" max="12" oninput="runCalculation()" class="w-full h-10 text-center bg-slate-50 dark:bg-slate-900 border-y border-slate-200 dark:border-slate-700 text-sm font-bold focus:outline-none">
+                            <button type="button" onclick="adjustCount('enfantsCharge', 1)" class="w-10 h-10 rounded-r-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold transition">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-2">Enfants en résidence alternée</label>
+                        <div class="flex items-center">
+                            <button type="button" onclick="adjustCount('enfantsAlternes', -1)" class="w-10 h-10 rounded-l-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold transition">-</button>
+                            <input type="number" id="enfantsAlternes" value="0" min="0" max="12" oninput="runCalculation()" class="w-full h-10 text-center bg-slate-50 dark:bg-slate-900 border-y border-slate-200 dark:border-slate-700 text-sm font-bold focus:outline-none">
+                            <button type="button" onclick="adjustCount('enfantsAlternes', 1)" class="w-10 h-10 rounded-r-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold transition">+</button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 pt-1">
+                        <label class="flex items-center gap-2 cursor-pointer group">
+                            <input type="checkbox" id="caseParentIsole" onchange="runCalculation()" class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-700">
+                            <span class="text-xs font-medium text-slate-700 dark:text-slate-300 group-hover:text-blue-600 transition">Parent isolé (Case T - Vit seul avec enfants)</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer group">
+                            <input type="checkbox" id="caseInvalidite" onchange="runCalculation()" class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-700">
+                            <span class="text-xs font-medium text-slate-700 dark:text-slate-300 group-hover:text-blue-600 transition">Carte d'invalidité (40%+) / Ancien combattant (+½ part)</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2: REVENUS DU FOYER -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200/80 dark:border-slate-700/80 transition-all">
+                <div class="flex items-center gap-3 mb-5">
+                    <span class="flex items-center justify-center w-8 h-8 rounded-xl bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 font-bold text-sm">2</span>
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900 dark:text-white">Revenus du Foyer Fiscal (Nets Imposables 2025)</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Saisissez vos rémunérations annuelles</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <!-- Déclarant 1 -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label for="salairesD1" class="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Salaires & Traitements - Déclarant 1</label>
+                            <span class="text-[11px] text-slate-400">Montant net imposable annuel</span>
+                        </div>
+                        <div class="relative">
+                            <input type="number" id="salairesD1" value="38000" step="500" min="0" oninput="runCalculation()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pl-3.5 pr-8 py-2.5 text-sm font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <span class="absolute right-3.5 top-2.5 text-slate-400 text-sm font-semibold">€</span>
+                        </div>
+                    </div>
+
+                    <!-- Déclarant 2 (Couple) -->
+                    <div id="blockDeclarant2" class="hidden">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label for="salairesD2" class="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Salaires & Traitements - Déclarant 2</label>
+                            <span class="text-[11px] text-slate-400">Montant net imposable annuel</span>
+                        </div>
+                        <div class="relative">
+                            <input type="number" id="salairesD2" value="26000" step="500" min="0" oninput="runCalculation()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pl-3.5 pr-8 py-2.5 text-sm font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <span class="absolute right-3.5 top-2.5 text-slate-400 text-sm font-semibold">€</span>
+                        </div>
+                    </div>
+
+                    <!-- Frais Réels -->
+                    <div class="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200/60 dark:border-slate-700/60 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                <i class="fa-solid fa-car-side text-blue-500"></i> Option Frais Réels (vs Abattement automatique 10%)
+                            </span>
+                            <span class="has-tooltip relative cursor-pointer text-slate-400 hover:text-slate-600">
+                                <i class="fa-solid fa-circle-question text-xs"></i>
+                                <span class="custom-tooltip absolute right-0 bottom-full mb-2 w-64 p-2 bg-slate-800 text-slate-100 text-xs rounded-lg shadow-xl border border-slate-700 z-50">
+                                    En 2026, l'abattement automatique de 10% s'applique par défaut (min 504 €, max 14 397 € par déclarant). Entrez une valeur si vos frais réels dépassent cet abattement.
+                                </span>
+                            </span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label for="fraisReelsD1" class="text-[11px] font-medium text-slate-500 block mb-1">Frais réels D1 (€)</label>
+                                <input type="number" id="fraisReelsD1" value="0" min="0" placeholder="0" oninput="runCalculation()" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-semibold">
+                            </div>
+                            <div id="blockFraisD2" class="hidden">
+                                <label for="fraisReelsD2" class="text-[11px] font-medium text-slate-500 block mb-1">Frais réels D2 (€)</label>
+                                <input type="number" id="fraisReelsD2" value="0" min="0" placeholder="0" oninput="runCalculation()" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-semibold">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pensions, Fonciers, Autres -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="pensionsRevenus" class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">Pensions & Rentes (€)</label>
+                            <input type="number" id="pensionsRevenus" value="0" step="500" min="0" oninput="runCalculation()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-sm font-semibold">
+                            <span class="text-[10px] text-slate-400 block mt-0.5">Abattement 10% (max 4 399 €)</span>
+                        </div>
+                        <div>
+                            <label for="revenusFonciers" class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">Revenus Fonciers Nets (€)</label>
+                            <input type="number" id="revenusFonciers" value="0" step="500" oninput="runCalculation()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-sm font-semibold">
+                            <span class="text-[10px] text-slate-400 block mt-0.5">Régime réel net ou micro-foncier</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 3: DÉDUCTIONS & RÉDUCTIONS / CRÉDITS D'IMPÔT -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200/80 dark:border-slate-700/80 transition-all">
+                <div class="flex items-center gap-3 mb-5">
+                    <span class="flex items-center justify-center w-8 h-8 rounded-xl bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 font-bold text-sm">3</span>
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900 dark:text-white">Charges Déductibles, Crédits & Réductions</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Optimisez et réduisez le montant net de votre impôt</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label for="versementsPER" class="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Versements PER (€)</label>
+                            <span class="text-[10px] bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded font-bold">Déductible IR</span>
+                        </div>
+                        <input type="number" id="versementsPER" value="0" step="250" min="0" placeholder="0" oninput="runCalculation()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-sm font-semibold">
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label for="emploiDomicile" class="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Emploi à domicile (€)</label>
+                            <span class="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded font-bold">Crédit 50%</span>
+                        </div>
+                        <input type="number" id="emploiDomicile" value="0" min="0" placeholder="Dépenses réelles" oninput="runCalculation()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-sm font-semibold">
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label for="fraisGarde" class="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Garde enfants -6 ans (€)</label>
+                            <span class="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded font-bold">Crédit 50%</span>
+                        </div>
+                        <input type="number" id="fraisGarde" value="0" min="0" placeholder="Max 3 500€ / enfant" oninput="runCalculation()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-sm font-semibold">
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label for="donsAssos" class="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Dons Associations (€)</label>
+                            <span class="text-[10px] bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded font-bold">Réduc 66%</span>
+                        </div>
+                        <input type="number" id="donsAssos" value="0" min="0" placeholder="Montant versé" oninput="runCalculation()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-sm font-semibold">
+                    </div>
+                </div>
+            </div>
+
+            <!-- SIMULATEUR D'OPTIMISATION PER -->
+            <div class="p-5 rounded-2xl bg-gradient-to-r from-slate-900 to-indigo-950 text-white shadow-lg space-y-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-piggy-bank text-amber-400 text-lg"></i>
+                        <h3 class="font-bold text-sm">Simulateur d'Économie d'Impôt PER</h3>
+                    </div>
+                    <span id="perBadgeTMI" class="text-[11px] bg-indigo-500/30 text-indigo-200 px-2.5 py-0.5 rounded-full font-semibold border border-indigo-400/30">
+                        Votre TMI : 0%
+                    </span>
+                </div>
+                <p class="text-xs text-slate-300 leading-relaxed">
+                    Un versement de <span id="valPerSimul" class="font-bold text-amber-300">1 000 €</span> sur un Plan d'Épargne Retraite (PER) réduira directement votre impôt 2026 de <span id="valGainPerSimul" class="font-bold text-emerald-400">0 €</span> grâce à votre Tranche Marginale d'Imposition.
+                </p>
+            </div>
+
+        </section>
+
+        <!-- SECTION DROITE: SYNTHÈSE & DÉTAILS (5 COLS STICKY) -->
+        <section class="lg:col-span-5 space-y-6">
+            
+            <div class="sticky top-20 space-y-6">
+                
+                <!-- CARTE PRINCIPALE NET À PAYER -->
+                <div class="bg-slate-900 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden border border-slate-800">
+                    <div class="absolute -right-8 -bottom-8 w-36 h-36 bg-blue-600/20 rounded-full blur-2xl pointer-events-none"></div>
+                    
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Impôt Net à Payer 2026</span>
+                        <span id="badgeRecouvrement" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">Revenus 2025</span>
+                    </div>
+
+                    <div class="flex items-baseline gap-2 mb-4">
+                        <span id="resImpotNetFinal" class="text-4xl font-extrabold tracking-tight text-white">0 €</span>
+                    </div>
+
+                    <!-- Métriques Clés TMI / Taux Moyen -->
+                    <div class="grid grid-cols-2 gap-3 pt-4 border-t border-slate-800/80">
+                        <div class="bg-slate-800/70 p-3 rounded-2xl border border-slate-700/50">
+                            <div class="flex items-center justify-between mb-0.5">
+                                <span class="text-[11px] text-slate-400 font-medium">TMI (Tranche Max)</span>
+                                <span class="has-tooltip relative cursor-pointer text-slate-500">
+                                    <i class="fa-solid fa-circle-info text-[10px]"></i>
+                                    <span class="custom-tooltip absolute right-0 bottom-full mb-2 w-52 p-2 bg-slate-950 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-800 z-50">
+                                        Tranche Marginale d'Imposition : le taux appliqué à votre dernier euro de revenu.
+                                    </span>
+                                </span>
+                            </div>
+                            <span id="resTMI" class="text-xl font-black text-blue-400">0 %</span>
+                        </div>
+
+                        <div class="bg-slate-800/70 p-3 rounded-2xl border border-slate-700/50">
+                            <div class="flex items-center justify-between mb-0.5">
+                                <span class="text-[11px] text-slate-400 font-medium">Taux Moyen</span>
+                                <span class="has-tooltip relative cursor-pointer text-slate-500">
+                                    <i class="fa-solid fa-circle-info text-[10px]"></i>
+                                    <span class="custom-tooltip absolute right-0 bottom-full mb-2 w-52 p-2 bg-slate-950 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-800 z-50">
+                                        Taux effectif = (Impôt net avant crédits / Revenu Net Imposable).
+                                    </span>
+                                </span>
+                            </div>
+                            <span id="resTauxMoyen" class="text-xl font-black text-emerald-400">0.0 %</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DÉTAILS ÉTAPE PAR ÉTAPE (DÉCOMPTE OFFICIEL) -->
+                <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-700/80 space-y-3">
+                    <h3 class="font-bold text-sm text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-700/80 pb-2.5 flex items-center justify-between">
+                        <span>Décompte Récapitulatif 2026</span>
+                        <i class="fa-solid fa-receipt text-slate-400 text-xs"></i>
+                    </h3>
+
+                    <div class="space-y-2 text-xs">
+                        <div class="flex justify-between py-0.5 text-slate-600 dark:text-slate-300">
+                            <span>Revenu Brut Total Foyer</span>
+                            <span id="resRevenuBrut" class="font-bold text-slate-900 dark:text-white">0 €</span>
+                        </div>
+                        <div class="flex justify-between py-0.5 text-slate-600 dark:text-slate-300">
+                            <span>Abattements 10% / Frais Réels</span>
+                            <span id="resTotalAbattements" class="font-semibold text-amber-600 dark:text-amber-400">-0 €</span>
+                        </div>
+                        <div class="flex justify-between py-0.5 text-slate-600 dark:text-slate-300">
+                            <span>Déductions (PER, Pensions...)</span>
+                            <span id="resTotalDeductions" class="font-semibold text-indigo-600 dark:text-indigo-400">-0 €</span>
+                        </div>
+
+                        <div class="border-t border-slate-100 dark:border-slate-700/60 my-1 pt-1.5 flex justify-between font-bold text-slate-900 dark:text-white">
+                            <span>Revenu Net Imposable (RNI)</span>
+                            <span id="resNetImposable">0 €</span>
+                        </div>
+
+                        <div class="flex justify-between py-0.5 text-slate-600 dark:text-slate-300">
+                            <span>Quotient Familial (RNI / Parts)</span>
+                            <span id="resQuotientFamilial" class="font-semibold">0 €</span>
+                        </div>
+
+                        <div class="flex justify-between py-0.5 text-slate-600 dark:text-slate-300">
+                            <span>Impôt Brut (avant plafonnement QF)</span>
+                            <span id="resImpotBrutSansPlafond" class="font-semibold">0 €</span>
+                        </div>
+
+                        <div id="rowPlafonnement" class="flex justify-between py-0.5 text-amber-600 dark:text-amber-400 hidden">
+                            <span class="has-tooltip cursor-pointer">
+                                Correctif Plafonnement QF <i class="fa-solid fa-circle-info text-[10px]"></i>
+                            </span>
+                            <span id="resImpactPlafonnement" class="font-bold">+0 €</span>
+                        </div>
+
+                        <div class="flex justify-between py-0.5 text-slate-600 dark:text-slate-300">
+                            <span>Impôt Brut après Plafonnement</span>
+                            <span id="resImpotBrutApresPlafond" class="font-semibold">0 €</span>
+                        </div>
+
+                        <div id="rowDecote" class="flex justify-between py-0.5 text-emerald-600 dark:text-emerald-400 hidden">
+                            <span class="has-tooltip cursor-pointer">
+                                Décote Fiscale 2026 <i class="fa-solid fa-circle-info text-[10px]"></i>
+                            </span>
+                            <span id="resMontantDecote" class="font-bold">-0 €</span>
+                        </div>
+
+                        <div id="rowCEHR" class="flex justify-between py-0.5 text-rose-500 hidden">
+                            <span class="has-tooltip cursor-pointer">
+                                Contribution Hauts Revenus (CEHR) <i class="fa-solid fa-circle-info text-[10px]"></i>
+                            </span>
+                            <span id="resMontantCEHR" class="font-bold">+0 €</span>
+                        </div>
+
+                        <div class="flex justify-between py-0.5 text-slate-600 dark:text-slate-300">
+                            <span>Crédits & Réductions d'impôt</span>
+                            <span id="resCreditsReductions" class="font-semibold text-emerald-600 dark:text-emerald-400">-0 €</span>
+                        </div>
+
+                        <div class="border-t border-slate-200 dark:border-slate-700 pt-2 flex justify-between items-center">
+                            <span class="font-bold text-slate-900 dark:text-white">Reste à Vivre Net Annuel</span>
+                            <span id="resResteAVivre" class="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">0 €</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GRAPHIQUE VISUEL CHART.JS -->
+                <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-700/80">
+                    <h3 class="font-bold text-sm text-slate-900 dark:text-white mb-3">Répartition Revenu vs Impôt</h3>
+                    <div class="h-48 relative">
+                        <canvas id="taxDistributionChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- FOOTER OFFICIEL EXPLICATIF -->
+    <footer class="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-xs text-slate-500 dark:text-slate-400 space-y-2">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-2 mb-2">
+                <span class="font-bold text-slate-700 dark:text-slate-200">Règles Fisc 2026 (Loi de Finances sur revenus 2025 - Revalorisation +0.9%)</span>
+                <span class="text-[11px] bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">Article 197 du CGI</span>
+            </div>
+            <p>• <strong>Barème 2026 :</strong> Tranche 0% (≤11 600 €) | Tranche 11% (11 601 € - 29 579 €) | Tranche 30% (29 580 € - 84 577 €) | Tranche 41% (84 578 € - 181 917 €) | Tranche 45% (>181 917 €).</p>
+            <p>• <strong>Plafonnement Quotient Familial :</strong> 1 807 € par demi-part supplémentaire (903,50 € en garde alternée). Plafond spécifique Parent Isolé (case T) : 4 262 € pour le premier enfant.</p>
+            <p>• <strong>Décote 2026 :</strong> Seuil d'application 1 982 € (célibataire) et 3 277 € (couple). Formule : Plafond (900 € célib. / 1 483 € couple) – 45.25% de l'impôt brut.</p>
+            <p>• <strong>Abattement 10% Salaires :</strong> Minimum 504 € - Maximum 14 397 € par déclarant. | <strong>Seuil de non-recouvrement :</strong> Impôt net inférieur à 61 € = 0 € dû.</p>
+        </div>
+    </footer>
+
+    <script>
+        let taxChartInstance = null;
+
+        // CONSTANTES FISCALES OFFICIELLES 2026 (REVENUS 2025)
+        const BAREME_2026 = [
+            { min: 0, max: 11600, rate: 0.00 },
+            { min: 11600, max: 29579, rate: 0.11 },
+            { min: 29579, max: 84577, rate: 0.30 },
+            { min: 84577, max: 181917, rate: 0.41 },
+            { min: 181917, max: Infinity, rate: 0.45 }
+        ];
+
+        const PLAFOND_DEMI_PART_2026 = 1807;
+        const PLAFOND_PARENT_ISOLE_2026 = 4262;
+        
+        const ABATTEMENT_10_SALAIRE_MIN = 504;
+        const ABATTEMENT_10_SALAIRE_MAX = 14397;
+        
+        const ABATTEMENT_10_PENSION_MIN = 454;
+        const ABATTEMENT_10_PENSION_MAX = 4399;
+
+        const DECOTE_SEUIL_SINGLE = 1982;
+        const DECOTE_BASE_SINGLE = 900;
+        
+        const DECOTE_SEUIL_COUPLE = 3277;
+        const DECOTE_BASE_COUPLE = 1483;
+
+        const DECOTE_COEFF = 0.4525;
+        const SEUIL_NON_RECOUVREMENT = 61;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initDarkMode();
+            initChart();
+            runCalculation();
+        });
+
+        function initDarkMode() {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            }
+        }
+
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            if (taxChartInstance) {
+                updateChartStyles();
+            }
+        }
+
+        function adjustCount(id, delta) {
+            const input = document.getElementById(id);
+            let val = parseInt(input.value) || 0;
+            val = Math.max(0, Math.min(12, val + delta));
+            input.value = val;
+            runCalculation();
+        }
+
+        function resetCalculator() {
+            document.getElementById('statutMarital').value = 'celibataire';
+            document.getElementById('enfantsCharge').value = '0';
+            document.getElementById('enfantsAlternes').value = '0';
+            document.getElementById('caseParentIsole').checked = false;
+            document.getElementById('caseInvalidite').checked = false;
+            document.getElementById('salairesD1').value = '38000';
+            document.getElementById('salairesD2').value = '26000';
+            document.getElementById('fraisReelsD1').value = '0';
+            document.getElementById('fraisReelsD2').value = '0';
+            document.getElementById('pensionsRevenus').value = '0';
+            document.getElementById('revenusFonciers').value = '0';
+            document.getElementById('versementsPER').value = '0';
+            document.getElementById('emploiDomicile').value = '0';
+            document.getElementById('fraisGarde').value = '0';
+            document.getElementById('donsAssos').value = '0';
+            runCalculation();
+        }
+
+        function calculateParts(statut, enfants, alternes, parentIsole, invalidite) {
+            let baseParts = 1.0;
+            if (statut === 'marie_pacs') {
+                baseParts = 2.0;
+            } else if (statut === 'veuf') {
+                baseParts = 1.0;
+            }
+
+            // Calcul enfants
+            let childrenParts = 0;
+            const totalEquivalentEnfants = enfants + (alternes * 0.5);
+
+            for (let i = 1; i <= totalEquivalentEnfants; i++) {
+                if (i <= 2) {
+                    childrenParts += 0.5;
+                } else {
+                    childrenParts += 1.0;
+                }
+            }
+
+            // Majoration Parent Isolé (Case T)
+            let hasParentIsoleBonus = false;
+            if (parentIsole && (enfants > 0 || alternes > 0)) {
+                childrenParts += 0.5;
+                hasParentIsoleBonus = true;
+            }
+
+            // Majoration Invalidité / Veteran
+            if (invalidite) {
+                baseParts += 0.5;
+            }
+
+            // Veuf avec enfants à charge conserve la part du conjoint décédé
+            if (statut === 'veuf' && totalEquivalentEnfants > 0) {
+                baseParts = 2.0;
+            }
+
+            return {
+                totalParts: baseParts + childrenParts,
+                baseParts: baseParts,
+                childrenParts: childrenParts,
+                hasParentIsoleBonus: hasParentIsoleBonus
+            };
+        }
+
+        function calculateBracketTax(quotient) {
+            let totalTaxUnit = 0;
+            let marginalRate = 0;
+
+            for (let bracket of BAREME_2026) {
+                if (quotient > bracket.min) {
+                    const taxableInBracket = Math.min(quotient, bracket.max) - bracket.min;
+                    totalTaxUnit += taxableInBracket * bracket.rate;
+                    if (bracket.rate > 0 && taxableInBracket > 0) {
+                        marginalRate = Math.round(bracket.rate * 100);
+                    }
+                }
+            }
+
+            return { taxUnit: totalTaxUnit, tmi: marginalRate };
+        }
+
+        function runCalculation() {
+            // 1. Entrées Formulaire
+            const statut = document.getElementById('statutMarital').value;
+            const isCouple = (statut === 'marie_pacs');
+
+            document.getElementById('blockDeclarant2').classList.toggle('hidden', !isCouple);
+            document.getElementById('blockFraisD2').classList.toggle('hidden', !isCouple);
+
+            const enfants = parseInt(document.getElementById('enfantsCharge').value) || 0;
+            const alternes = parseInt(document.getElementById('enfantsAlternes').value) || 0;
+            const parentIsole = document.getElementById('caseParentIsole').checked;
+            const invalidite = document.getElementById('caseInvalidite').checked;
+
+            const salD1 = Math.max(0, parseFloat(document.getElementById('salairesD1').value) || 0);
+            const salD2 = isCouple ? Math.max(0, parseFloat(document.getElementById('salairesD2').value) || 0) : 0;
+
+            const frD1 = Math.max(0, parseFloat(document.getElementById('fraisReelsD1').value) || 0);
+            const frD2 = isCouple ? Math.max(0, parseFloat(document.getElementById('fraisReelsD2').value) || 0) : 0;
+
+            const pensions = Math.max(0, parseFloat(document.getElementById('pensionsRevenus').value) || 0);
+            const foncier = Math.max(0, parseFloat(document.getElementById('revenusFonciers').value) || 0);
+
+            const perVersement = Math.max(0, parseFloat(document.getElementById('versementsPER').value) || 0);
+            const emploiDom = Math.max(0, parseFloat(document.getElementById('emploiDomicile').value) || 0);
+            const garde = Math.max(0, parseFloat(document.getElementById('fraisGarde').value) || 0);
+            const dons = Math.max(0, parseFloat(document.getElementById('donsAssos').value) || 0);
+
+            // 2. Traitement des Abattements 10% Salaires vs Frais Réels
+            const calcAbattementSalary = (sal) => {
+                if (sal <= 0) return 0;
+                let abatt = sal * 0.10;
+                if (abatt < ABATTEMENT_10_SALAIRE_MIN) abatt = Math.min(sal, ABATTEMENT_10_SALAIRE_MIN);
+                if (abatt > ABATTEMENT_10_SALAIRE_MAX) abatt = ABATTEMENT_10_SALAIRE_MAX;
+                return abatt;
+            };
+
+            const abattD1 = frD1 > 0 ? frD1 : calcAbattementSalary(salD1);
+            const abattD2 = frD2 > 0 ? frD2 : calcAbattementSalary(salD2);
+            const totalAbattementSalaires = abattD1 + abattD2;
+
+            const salairesNets = Math.max(0, salD1 - abattD1) + Math.max(0, salD2 - abattD2);
+
+            // Abattement Pensions (Foyer)
+            let abattementPensions = 0;
+            if (pensions > 0) {
+                abattementPensions = pensions * 0.10;
+                if (abattementPensions < ABATTEMENT_10_PENSION_MIN) abattementPensions = Math.min(pensions, ABATTEMENT_10_PENSION_MIN);
+                if (abattementPensions > ABATTEMENT_10_PENSION_MAX) abattementPensions = ABATTEMENT_10_PENSION_MAX;
+            }
+            const pensionsNets = Math.max(0, pensions - abattementPensions);
+
+            const brutTotal = salD1 + salD2 + pensions + foncier;
+
+            // 3. Déductions du Revenu Global (PER)
+            const totalDeductions = perVersement;
+            const revenuNetImposable = Math.max(0, salairesNets + pensionsNets + foncier - totalDeductions);
+
+            // 4. Quotients & Parts
+            const QF = calculateParts(statut, enfants, alternes, parentIsole, invalidite);
+            const nbParts = QF.totalParts;
+            document.getElementById('valNbParts').innerText = `${nbParts} part${nbParts > 1 ? 's' : ''}`;
+
+            const quotientFamilial = revenuNetImposable / nbParts;
+
+            // 5. Impôt Brut et Plafonnement du Quotient Familial
+            const resBrutFull = calculateBracketTax(quotientFamilial);
+            const impotBrutCalculated = resBrutFull.taxUnit * nbParts;
+            const tmiReal = resBrutFull.tmi;
+
+            // Vérification Plafonnement (sur parts additionnelles)
+            let impotBrutApresPlafond = impotBrutCalculated;
+            let impactPlafonnement = 0;
+
+            if (nbParts > QF.baseParts) {
+                const QFBase = revenuNetImposable / QF.baseParts;
+                const resBrutBase = calculateBracketTax(QFBase);
+                const impotBrutBase = resBrutBase.taxUnit * QF.baseParts;
+
+                const gainAvantageQF = impotBrutBase - impotBrutCalculated;
+
+                // Calcul du plafond autorisé
+                let maxPlafondAutorise = 0;
+                if (QF.hasParentIsoleBonus) {
+                    // Parent isolé : 1er enfant bénéficie du plafond spécifique (4 262 €), les autres de 1 807 € par demi-part
+                    const demiPartsTotal = (nbParts - QF.baseParts) * 2;
+                    maxPlafondAutorise = PLAFOND_PARENT_ISOLE_2026 + Math.max(0, (demiPartsTotal - 1) * PLAFOND_DEMI_PART_2026);
+                } else {
+                    const demiPartsTotal = (nbParts - QF.baseParts) * 2;
+                    maxPlafondAutorise = demiPartsTotal * PLAFOND_DEMI_PART_2026;
+                }
+
+                if (gainAvantageQF > maxPlafondAutorise) {
+                    impactPlafonnement = gainAvantageQF - maxPlafondAutorise;
+                    impotBrutApresPlafond = impotBrutBase - maxPlafondAutorise;
+                }
+            }
+
+            // 6. Application Décote Fiscale 2026
+            let decote = 0;
+            const seuilDecote = isCouple ? DECOTE_SEUIL_COUPLE : DECOTE_SEUIL_SINGLE;
+            const baseDecote = isCouple ? DECOTE_BASE_COUPLE : DECOTE_BASE_SINGLE;
+
+            if (impotBrutApresPlafond > 0 && impotBrutApresPlafond < seuilDecote) {
+                decote = baseDecote - (impotBrutApresPlafond * DECOTE_COEFF);
+                decote = Math.max(0, Math.min(decote, impotBrutApresPlafond));
+            }
+
+            let impotApresDecote = Math.max(0, impotBrutApresPlafond - decote);
+
+            // 7. Contribution Exceptionnelle sur les Hauts Revenus (CEHR)
+            let cehr = 0;
+            const seuilCEHR1 = isCouple ? 500000 : 250000;
+            const seuilCEHR2 = isCouple ? 1000000 : 500000;
+
+            if (revenuNetImposable > seuilCEHR1) {
+                if (revenuNetImposable <= seuilCEHR2) {
+                    cehr = (revenuNetImposable - seuilCEHR1) * 0.03;
+                } else {
+                    cehr = ((seuilCEHR2 - seuilCEHR1) * 0.03) + ((revenuNetImposable - seuilCEHR2) * 0.04);
+                }
+            }
+
+            // 8. Réductions et Crédits d'Impôt
+            const creditEmploiDom = Math.min(emploiDom * 0.50, 6000); // Plafond standard 12000€ * 50%
+            const creditGarde = Math.min(garde * 0.50, (enfants + alternes) * 1750); // 3500€/enfant * 50%
+            const reducDons = dons * 0.66;
+
+            const totalCredits = creditEmploiDom + creditGarde + reducDons;
+
+            // 9. Impôt Net Final & Seuil de Non-Recouvrement
+            let impotNetApresCredits = impotApresDecote + cehr - totalCredits;
+            let impotFinalPayer = impotNetApresCredits;
+
+            if (impotFinalPayer > 0 && impotFinalPayer < SEUIL_NON_RECOUVREMENT) {
+                impotFinalPayer = 0; // Regle de non-recouvrement si < 61 €
+            }
+
+            // Taux moyen d'imposition
+            const tauxMoyen = revenuNetImposable > 0 ? Math.max(0, (impotApresDecote / revenuNetImposable) * 100).toFixed(1) : "0.0";
+
+            // Reste à Vivre
+            const resteAVivre = Math.max(0, brutTotal - Math.max(0, impotFinalPayer));
+
+            // 10. Mises à jour DOM UI
+            document.getElementById('resImpotNetFinal').innerText = `${Math.round(impotFinalPayer).toLocaleString('fr-FR')} €`;
+            
+            if (impotNetApresCredits > 0 && impotNetApresCredits < SEUIL_NON_RECOUVREMENT) {
+                document.getElementById('badgeRecouvrement').innerText = "Non exigible (<61€)";
+                document.getElementById('badgeRecouvrement').className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-900 text-emerald-300 border border-emerald-700";
+            } else {
+                document.getElementById('badgeRecouvrement').innerText = "Revenus 2025";
+                document.getElementById('badgeRecouvrement').className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700";
+            }
+
+            document.getElementById('resTMI').innerText = `${tmiReal} %`;
+            document.getElementById('resTauxMoyen').innerText = `${tauxMoyen} %`;
+
+            document.getElementById('resRevenuBrut').innerText = `${Math.round(brutTotal).toLocaleString('fr-FR')} €`;
+            document.getElementById('resTotalAbattements').innerText = `-${Math.round(totalAbattementSalaires + abattementPensions).toLocaleString('fr-FR')} €`;
+            document.getElementById('resTotalDeductions').innerText = `-${Math.round(totalDeductions).toLocaleString('fr-FR')} €`;
+
+            document.getElementById('resNetImposable').innerText = `${Math.round(revenuNetImposable).toLocaleString('fr-FR')} €`;
+            document.getElementById('resQuotientFamilial').innerText = `${Math.round(quotientFamilial).toLocaleString('fr-FR')} €`;
+
+            document.getElementById('resImpotBrutSansPlafond').innerText = `${Math.round(impotBrutCalculated).toLocaleString('fr-FR')} €`;
+
+            if (impactPlafonnement > 0) {
+                document.getElementById('rowPlafonnement').classList.remove('hidden');
+                document.getElementById('resImpactPlafonnement').innerText = `+${Math.round(impactPlafonnement).toLocaleString('fr-FR')} €`;
+            } else {
+                document.getElementById('rowPlafonnement').classList.add('hidden');
+            }
+
+            document.getElementById('resImpotBrutApresPlafond').innerText = `${Math.round(impotBrutApresPlafond).toLocaleString('fr-FR')} €`;
+
+            if (decote > 0) {
+                document.getElementById('rowDecote').classList.remove('hidden');
+                document.getElementById('resMontantDecote').innerText = `-${Math.round(decote).toLocaleString('fr-FR')} €`;
+            } else {
+                document.getElementById('rowDecote').classList.add('hidden');
+            }
+
+            if (cehr > 0) {
+                document.getElementById('rowCEHR').classList.remove('hidden');
+                document.getElementById('resMontantCEHR').innerText = `+${Math.round(cehr).toLocaleString('fr-FR')} €`;
+            } else {
+                document.getElementById('rowCEHR').classList.add('hidden');
+            }
+
+            document.getElementById('resCreditsReductions').innerText = `-${Math.round(totalCredits).toLocaleString('fr-FR')} €`;
+            document.getElementById('resResteAVivre').innerText = `${Math.round(resteAVivre).toLocaleString('fr-FR')} €`;
+
+            // Simulation PER Card
+            const gainPER = 1000 * (tmiReal / 100);
+            document.getElementById('perBadgeTMI').innerText = `Votre TMI : ${tmiReal}%`;
+            document.getElementById('valGainPerSimul').innerText = `${Math.round(gainPER).toLocaleString('fr-FR')} €`;
+
+            // Updating Chart
+            updateChart(resteAVivre, Math.max(0, impotFinalPayer));
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('taxDistributionChart').getContext('2d');
+            taxChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Reste à Vivre Net', 'Impôt Net à Payer'],
+                    datasets: [{
+                        data: [85, 15],
+                        backgroundColor: ['#10b981', '#3b82f6'],
+                        hoverBackgroundColor: ['#059669', '#2563eb'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: { family: 'Inter', size: 11, weight: '600' },
+                                color: getChartTextColor()
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.label}: ${Math.round(context.raw).toLocaleString('fr-FR')} €`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '72%'
+                }
+            });
+        }
+
+        function updateChart(reste, impot) {
+            if (!taxChartInstance) return;
+            taxChartInstance.data.datasets[0].data = [reste, impot];
+            taxChartInstance.options.plugins.legend.labels.color = getChartTextColor();
+            taxChartInstance.update();
+        }
+
+        function getChartTextColor() {
+            return document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#475569';
+        }
+
+        function updateChartStyles() {
+            if (taxChartInstance) {
+                taxChartInstance.options.plugins.legend.labels.color = getChartTextColor();
+                taxChartInstance.update();
+            }
+        }
+    </script>
+</body>
+</html>
